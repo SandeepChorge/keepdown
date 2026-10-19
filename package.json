@@ -1,0 +1,23 @@
+{
+  "name": "keepdown",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Markdown scratchpad with live preview that keeps what you paste",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "dompurify": "3.4.16",
+    "highlight.js": "11.12.0",
+    "marked": "12.0.2"
+  },
+  "devDependencies": {
+    "vite": "8.3.2"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}
