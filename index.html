@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Keepdown">
 <title>Keepdown</title>
-<script>try{var t=localStorage.getItem('keepdown.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem('keepdown.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('keepdown.rail')==='collapsed')document.documentElement.setAttribute('data-rail','collapsed')}catch(e){}</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23171C27'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='20' font-weight='700' fill='%23F2F4F7' text-anchor='middle'%3E%23%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,6 +31,7 @@
   --f-read:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
   --f-mono:Menlo,ui-monospace,SFMono-Regular,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
   --rail-w:292px;
+  --mini-w:56px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
@@ -73,11 +74,30 @@ kbd{font:500 11px/1 var(--f-mono);padding:3px 5px;border:1px solid var(--line-2)
 
 /* ---------- shell ---------- */
 .app{height:100%;display:grid;grid-template-columns:var(--rail-w) minmax(0,1fr)}
-.rail{display:flex;flex-direction:column;min-height:0;background:var(--rail);border-right:1px solid var(--line)}
-.rail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 12px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em}
-.brand-mark{width:26px;height:26px;border-radius:7px;background:var(--ink);color:var(--bg);display:grid;place-items:center;font:600 15px/1 var(--f-mono)}
+.rail{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--rail);border-right:1px solid var(--line)}
+.rail-full{display:flex;flex-direction:column;flex:1;min-height:0}
+.rail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 16px 12px 11px}
+.brand{display:flex;align-items:center;gap:6px;min-width:0;font-weight:700;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
 .head-actions{display:flex;align-items:center;gap:4px}
+
+/* collapsed sidebar: a slim strip of icons; the toggle sits in the same spot in both states */
+.rail-mini{display:none;flex-direction:column;align-items:center;gap:6px;flex:1;min-height:0;padding:16px 0 14px}
+.rail-mini .grow{flex:1}
+.rail-mini .sep{width:24px;height:1px;margin:4px 0;background:var(--line)}
+.mini-new{background:var(--accent);color:var(--accent-ink)}
+.mini-new:hover{background:var(--accent-2);color:var(--accent-ink)}
+.mini-store{position:relative}
+.mini-store .dot{position:absolute;top:6px;right:5px;width:7px;height:7px;box-shadow:0 0 0 2px var(--rail)}
+.mini-store[data-state="local"] .dot{background:var(--warn)}
+.mini-store[data-state="cloud"] .dot{background:var(--ok)}
+.mini-store[data-state="busy"] .dot{background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+.mini-store[data-state="error"] .dot{background:var(--danger)}
+@media (min-width:821px){
+  .app{transition:grid-template-columns .18s ease}
+  :root[data-rail="collapsed"] .app{grid-template-columns:var(--mini-w) minmax(0,1fr)}
+  :root[data-rail="collapsed"] .rail-full{display:none}
+  :root[data-rail="collapsed"] .rail-mini{display:flex}
+}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;text-decoration:none}
 .btn:hover{border-color:var(--ink-3)}
@@ -256,8 +276,8 @@ dialog::backdrop{background:var(--scrim)}
 
 @media (max-width:820px){
   .app{grid-template-columns:minmax(0,1fr)}
-  .rail{position:fixed;top:0;bottom:0;left:0;z-index:40;width:min(86vw,320px);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);transform:translateX(-102%);transition:transform .22s ease;box-shadow:var(--shadow)}
-  .app.drawer-open .rail{transform:none}
+  .rail{position:fixed;top:0;bottom:0;left:0;z-index:40;width:min(86vw,320px);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);transform:translateX(-102%);transition:transform .22s ease,box-shadow .22s ease;box-shadow:none}
+  .app.drawer-open .rail{transform:none;box-shadow:var(--shadow)}
   .scrim{display:block;position:fixed;inset:0;z-index:30;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .2s}
   .app.drawer-open .scrim{opacity:1;pointer-events:auto}
   .menu{display:inline-grid}
@@ -287,8 +307,14 @@ dialog::backdrop{background:var(--scrim)}
 <body>
 <div class="app" id="app" data-view="split">
   <aside class="rail" id="rail" aria-label="Notes">
+   <div class="rail-full">
     <div class="rail-head">
-      <div class="brand"><span class="brand-mark" aria-hidden="true">#</span>Keepdown</div>
+      <div class="brand">
+        <button class="icon-btn" type="button" data-rail-toggle aria-label="Hide sidebar" title="Hide sidebar">
+          <svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+        </button>
+        Keepdown
+      </div>
       <div class="head-actions">
         <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch to dark theme" title="Switch to dark theme">
           <svg class="i" id="themeIcon" viewBox="0 0 24 24"></svg>
@@ -319,6 +345,33 @@ dialog::backdrop{background:var(--scrim)}
       </div>
       <input type="file" id="fileInput" multiple accept=".md,.markdown,.mdown,.txt,.json,text/markdown,text/plain,application/json" hidden>
     </div>
+   </div>
+   <nav class="rail-mini" aria-label="Sidebar shortcuts">
+      <button class="icon-btn" type="button" data-rail-toggle aria-label="Show sidebar" title="Show sidebar">
+        <svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+      </button>
+      <button class="icon-btn mini-new" id="miniNew" type="button" aria-label="New note" title="New note">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="icon-btn" id="miniSearch" type="button" aria-label="Search notes" title="Search notes">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+      <span class="grow"></span>
+      <button class="icon-btn" id="miniTheme" type="button" aria-label="Switch to dark theme" title="Switch to dark theme">
+        <svg class="i" id="miniThemeIcon" viewBox="0 0 24 24"></svg>
+      </button>
+      <button class="icon-btn mini-store" id="miniStore" type="button" data-state="local" aria-label="Sync settings" title="Sync settings">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg>
+        <span class="dot"></span>
+      </button>
+      <span class="sep"></span>
+      <button class="icon-btn" id="miniImport" type="button" aria-label="Import" title="Import .md files or a backup">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>
+      </button>
+      <button class="icon-btn" id="miniExport" type="button" aria-label="Back up all" title="Back up all notes">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      </button>
+   </nav>
   </aside>
   <div class="scrim" id="scrim"></div>
 
@@ -1022,6 +1075,10 @@ function renderStore() {
   $('storeMain').textContent = main;
   $('storeSub').textContent = sub;
   el.title = gh.token ? (gh.error || 'Notes sync to ' + fullRepo()) : 'Notes live only in this browser. Set up GitHub sync to keep them in your account.';
+  const mini = $('miniStore');
+  mini.dataset.state = st;
+  mini.title = main + ' · ' + sub;
+  mini.setAttribute('aria-label', main + '. ' + sub);
 }
 function renderSaveState() {
   const el = $('saveState'), txt = $('saveText');
@@ -1326,14 +1383,21 @@ $('delBtn').addEventListener('click', () => {
   if (gone && gone.body.trim()) toast('Deleted “' + (title.length > 40 ? title.slice(0, 40) + '…' : title) + '”', { action: 'Undo', onAction: () => restoreNote(gone), ms: 8000 });
 });
 const fileInput = $('fileInput');
-$('importBtn').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
+const pickFiles = () => { fileInput.value = ''; fileInput.click(); };
+$('importBtn').addEventListener('click', pickFiles);
+$('miniImport').addEventListener('click', pickFiles);
 fileInput.addEventListener('change', () => { if (fileInput.files.length) importFiles([...fileInput.files]); });
-$('exportBtn').addEventListener('click', () => {
+function exportAll() {
   if (!state.notes.size) { toast('No notes to back up yet.'); return; }
   const notes = sortedNotes().map(({ id, body, createdAt, updatedAt, changedAt, pinned }) => ({ id, body, createdAt, updatedAt, changedAt, pinned }));
   const day = new Date().toISOString().slice(0, 10);
   offerFile('keepdown-backup-' + day + '.json', JSON.stringify({ app: 'keepdown', version: 1, exportedAt: new Date().toISOString(), notes }, null, 2));
-});
+}
+$('exportBtn').addEventListener('click', exportAll);
+$('miniExport').addEventListener('click', exportAll);
+$('miniNew').addEventListener('click', () => newNote());
+$('miniSearch').addEventListener('click', focusSearch);
+$('miniStore').addEventListener('click', openGhDialog);
 document.addEventListener('click', e => {
   const b = e.target.closest('.copy-code');
   if (!b) return;
@@ -1373,7 +1437,8 @@ document.addEventListener('keydown', e => {
     if (gh.token && gh.status !== 'auth') pump(true).then(() => toast(gh.status === 'on' ? 'Saved to GitHub' : 'Saved in this browser. GitHub will catch up.'));
     else toast('Saved in this browser');
   }
-  else if (mod && k === 'k') { e.preventDefault(); app.classList.add('drawer-open'); $('search').focus(); $('search').select(); }
+  else if (mod && k === 'k') { e.preventDefault(); focusSearch(); }
+  else if (mod && e.key === '\\') { e.preventDefault(); toggleRail(); }
   else if (e.altKey && !mod && e.code === 'KeyN') { e.preventDefault(); newNote(); }
   else if (e.key === 'Escape' && app.classList.contains('drawer-open')) closeDrawer();
 });
@@ -1398,19 +1463,57 @@ const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4
 const currentTheme = () => document.documentElement.getAttribute('data-theme') || (darkMq.matches ? 'dark' : 'light');
 function renderTheme() {
   const dark = currentTheme() === 'dark';
-  $('themeIcon').innerHTML = dark ? SUN : MOON;
   const label = dark ? 'Switch to light theme' : 'Switch to dark theme';
-  $('themeBtn').title = label;
-  $('themeBtn').setAttribute('aria-label', label);
+  for (const [btn, icon] of [['themeBtn', 'themeIcon'], ['miniTheme', 'miniThemeIcon']]) {
+    $(icon).innerHTML = dark ? SUN : MOON;
+    $(btn).title = label;
+    $(btn).setAttribute('aria-label', label);
+  }
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   for (const m of document.querySelectorAll('meta[name="theme-color"]')) m.content = bg;
 }
-$('themeBtn').addEventListener('click', () => {
+function toggleTheme() {
   const next = currentTheme() === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   ls.set(LS_THEME, next);
   renderTheme();
-});
+}
+$('themeBtn').addEventListener('click', toggleTheme);
+$('miniTheme').addEventListener('click', toggleTheme);
+
+/* ---------- collapsible sidebar (remembered per device) ---------- */
+const LS_RAIL = 'keepdown.rail';
+const SLASH = IS_MAC ? '⌘\\' : 'Ctrl+\\';
+const railCollapsed = () => document.documentElement.getAttribute('data-rail') === 'collapsed';
+function setRail(collapsed) {
+  if (collapsed) document.documentElement.setAttribute('data-rail', 'collapsed');
+  else document.documentElement.removeAttribute('data-rail');
+  ls.set(LS_RAIL, collapsed ? 'collapsed' : 'open');
+  renderRail();
+}
+function toggleRail() {
+  if (narrowMq.matches) { app.classList.toggle('drawer-open'); return; }   // phones keep the slide-in drawer
+  setRail(!railCollapsed());
+}
+function focusSearch() {
+  if (narrowMq.matches) app.classList.add('drawer-open');
+  else if (railCollapsed()) setRail(false);
+  $('search').focus(); $('search').select();
+}
+function renderRail() {
+  const narrow = narrowMq.matches;
+  for (const b of document.querySelectorAll('[data-rail-toggle]')) {
+    const showing = !b.closest('.rail-mini');
+    const label = narrow ? 'Close sidebar' : showing ? 'Hide sidebar' : 'Show sidebar';
+    b.title = label + (narrow ? '' : ' (' + SLASH + ')');
+    b.setAttribute('aria-label', label);
+  }
+  $('miniSearch').title = 'Search notes (' + MOD + 'K)';
+  $('miniNew').title = 'New note (' + (IS_MAC ? '⌥N' : 'Alt+N') + ')';
+}
+for (const b of document.querySelectorAll('[data-rail-toggle]')) b.addEventListener('click', toggleRail);
+narrowMq.addEventListener('change', renderRail);
+renderRail();
 darkMq.addEventListener('change', renderTheme);
 renderTheme();
 
